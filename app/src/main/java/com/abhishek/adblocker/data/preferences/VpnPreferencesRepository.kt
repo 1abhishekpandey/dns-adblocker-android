@@ -16,6 +16,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class VpnPreferencesRepository(private val context: Context) {
     private val vpnEnabledKey = booleanPreferencesKey("vpn_enabled")
     private val selectedAppsKey = stringSetPreferencesKey("selected_app_packages")
+    private val userBlockedDomainsKey = stringSetPreferencesKey("user_blocked_domains")
+    private val userUnblockedDefaultDomainsKey = stringSetPreferencesKey("user_unblocked_default_domains")
 
     val isVpnEnabled: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
@@ -27,6 +29,16 @@ class VpnPreferencesRepository(private val context: Context) {
             preferences[selectedAppsKey] ?: emptySet()
         }
 
+    val userBlockedDomains: Flow<Set<String>> = context.dataStore.data
+        .map { preferences ->
+            preferences[userBlockedDomainsKey] ?: emptySet()
+        }
+
+    val userUnblockedDefaultDomains: Flow<Set<String>> = context.dataStore.data
+        .map { preferences ->
+            preferences[userUnblockedDefaultDomainsKey] ?: emptySet()
+        }
+
     suspend fun setVpnEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[vpnEnabledKey] = enabled
@@ -36,6 +48,46 @@ class VpnPreferencesRepository(private val context: Context) {
     suspend fun setSelectedAppPackages(packages: Set<String>) {
         context.dataStore.edit { preferences ->
             preferences[selectedAppsKey] = packages
+        }
+    }
+
+    suspend fun addUserBlockedDomain(domain: String) {
+        context.dataStore.edit { preferences ->
+            val currentDomains = preferences[userBlockedDomainsKey] ?: emptySet()
+            preferences[userBlockedDomainsKey] = currentDomains + domain
+        }
+    }
+
+    suspend fun removeUserBlockedDomain(domain: String) {
+        context.dataStore.edit { preferences ->
+            val currentDomains = preferences[userBlockedDomainsKey] ?: emptySet()
+            preferences[userBlockedDomainsKey] = currentDomains - domain
+        }
+    }
+
+    suspend fun clearUserBlockedDomains() {
+        context.dataStore.edit { preferences ->
+            preferences[userBlockedDomainsKey] = emptySet()
+        }
+    }
+
+    suspend fun addUserUnblockedDefaultDomain(domain: String) {
+        context.dataStore.edit { preferences ->
+            val currentDomains = preferences[userUnblockedDefaultDomainsKey] ?: emptySet()
+            preferences[userUnblockedDefaultDomainsKey] = currentDomains + domain
+        }
+    }
+
+    suspend fun removeUserUnblockedDefaultDomain(domain: String) {
+        context.dataStore.edit { preferences ->
+            val currentDomains = preferences[userUnblockedDefaultDomainsKey] ?: emptySet()
+            preferences[userUnblockedDefaultDomainsKey] = currentDomains - domain
+        }
+    }
+
+    suspend fun clearUserUnblockedDefaultDomains() {
+        context.dataStore.edit { preferences ->
+            preferences[userUnblockedDefaultDomainsKey] = emptySet()
         }
     }
 }

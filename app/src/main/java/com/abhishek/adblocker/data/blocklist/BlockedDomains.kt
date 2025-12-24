@@ -1,7 +1,7 @@
 package com.abhishek.adblocker.data.blocklist
 
 object BlockedDomains {
-    private val domains = setOf(
+    private val defaultDomains = setOf(
         // Google Ads
         "pagead2.googlesyndication.com",
         "googleads.g.doubleclick.net",
@@ -40,12 +40,50 @@ object BlockedDomains {
         "outbrain.com"
     )
 
+    private var userDomains: Set<String> = emptySet()
+    private var userUnblockedDefaultDomains: Set<String> = emptySet()
+
+    fun updateUserDomains(domains: Set<String>) {
+        userDomains = domains
+    }
+
+    fun updateUserUnblockedDefaultDomains(domains: Set<String>) {
+        userUnblockedDefaultDomains = domains
+    }
+
     fun isBlocked(hostname: String): Boolean {
         val normalized = hostname.lowercase().trimEnd('.')
+        val isInDefault = isBlockedBySet(normalized, defaultDomains)
+        val isUnblocked = isBlockedBySet(normalized, userUnblockedDefaultDomains)
+        val isInUser = isBlockedBySet(normalized, userDomains)
+
+        return (isInDefault && !isUnblocked) || isInUser
+    }
+
+    fun isBlockedByDefault(hostname: String): Boolean {
+        val normalized = hostname.lowercase().trimEnd('.')
+        return isBlockedBySet(normalized, defaultDomains)
+    }
+
+    fun isBlockedByUser(hostname: String): Boolean {
+        val normalized = hostname.lowercase().trimEnd('.')
+        return isBlockedBySet(normalized, userDomains)
+    }
+
+    fun isUnblockedByUser(hostname: String): Boolean {
+        val normalized = hostname.lowercase().trimEnd('.')
+        return isBlockedBySet(normalized, userUnblockedDefaultDomains)
+    }
+
+    private fun isBlockedBySet(normalized: String, domains: Set<String>): Boolean {
         return domains.any { blocked ->
             normalized == blocked || normalized.endsWith(".$blocked")
         }
     }
 
-    fun getBlockedDomains(): Set<String> = domains
+    fun getDefaultDomains(): Set<String> = defaultDomains
+
+    fun getUserDomains(): Set<String> = userDomains
+
+    fun getBlockedDomains(): Set<String> = (defaultDomains - userUnblockedDefaultDomains) + userDomains
 }

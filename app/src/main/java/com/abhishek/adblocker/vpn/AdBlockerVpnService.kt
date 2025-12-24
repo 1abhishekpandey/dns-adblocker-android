@@ -12,6 +12,7 @@ import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import com.abhishek.adblocker.MainActivity
 import com.abhishek.adblocker.R
+import com.abhishek.adblocker.data.blocklist.BlockedDomains
 import com.abhishek.adblocker.data.preferences.VpnPreferencesRepository
 import com.abhishek.adblocker.util.Logger
 import com.abhishek.adblocker.vpn.dns.DnsPacketHandler
@@ -59,11 +60,12 @@ class AdBlockerVpnService : VpnService() {
         }
 
         vpnPreferencesRepository = VpnPreferencesRepository(this)
+        observeUserBlockedDomains()
 
         startForeground(NOTIFICATION_ID, createNotification())
 
         setupVpnInterface()
-        dnsPacketHandler = DnsPacketHandler(this)
+        dnsPacketHandler = DnsPacketHandler(this, serviceScope)
         startPacketProcessing()
 
         Logger.vpnStarted()
@@ -114,6 +116,21 @@ class AdBlockerVpnService : VpnService() {
         }
 
         Logger.i("Applied VPN filtering to ${selectedApps.size} apps")
+    }
+
+    private fun observeUserBlockedDomains() {
+        serviceScope.launch {
+            vpnPreferencesRepository.userBlockedDomains.collect { domains ->
+                BlockedDomains.updateUserDomains(domains)
+                Logger.d("Updated user blocked domains: ${domains.size} domains")
+            }
+        }
+        serviceScope.launch {
+            vpnPreferencesRepository.userUnblockedDefaultDomains.collect { domains ->
+                BlockedDomains.updateUserUnblockedDefaultDomains(domains)
+                Logger.d("Updated user unblocked default domains: ${domains.size} domains")
+            }
+        }
     }
 
     private fun startPacketProcessing() {

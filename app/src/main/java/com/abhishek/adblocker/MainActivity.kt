@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.abhishek.adblocker.ui.navigation.NavRoutes
 import com.abhishek.adblocker.ui.screens.AppSelectionScreen
+import com.abhishek.adblocker.ui.screens.DomainMonitorScreen
 import com.abhishek.adblocker.ui.screens.MainScreen
 import com.abhishek.adblocker.ui.theme.AdBlockerTheme
 import com.abhishek.adblocker.ui.viewmodels.MainViewModel
@@ -45,6 +46,9 @@ class MainActivity : ComponentActivity() {
                             MainScreen(
                                 onNavigateToAppSelection = {
                                     navController.navigate(NavRoutes.APP_SELECTION)
+                                },
+                                onNavigateToDomainMonitor = {
+                                    navController.navigate(NavRoutes.DOMAIN_MONITOR)
                                 }
                             )
                         }
@@ -55,6 +59,14 @@ class MainActivity : ComponentActivity() {
                                     navController.popBackStack()
                                 },
                                 isVpnActive = isVpnActive
+                            )
+                        }
+
+                        composable(NavRoutes.DOMAIN_MONITOR) {
+                            DomainMonitorScreen(
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                }
                             )
                         }
                     }

@@ -36,6 +36,7 @@ import com.abhishek.adblocker.ui.viewmodels.MainViewModelFactory
 fun MainScreen(
     modifier: Modifier = Modifier,
     onNavigateToAppSelection: () -> Unit = {},
+    onNavigateToDomainMonitor: () -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.applicationContext)
     )
@@ -88,6 +89,10 @@ fun MainScreen(
             selectedCount = selectedAppCount,
             onSelectAppsClick = onNavigateToAppSelection
         )
+
+        if (vpnEnabled && selectedAppCount > 0) {
+            DomainMonitorSection(onMonitorDomainsClick = onNavigateToDomainMonitor)
+        }
     }
 }
 
@@ -213,6 +218,32 @@ private fun SelectedAppsSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Select Apps")
+        }
+    }
+}
+
+@Composable
+private fun DomainMonitorSection(
+    onMonitorDomainsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "Domain Activity",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Button(
+            onClick = onMonitorDomainsClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Monitor Domains")
         }
     }
 }

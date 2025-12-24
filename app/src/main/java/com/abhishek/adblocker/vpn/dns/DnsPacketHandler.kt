@@ -6,11 +6,13 @@ import com.abhishek.adblocker.util.Logger
 import com.abhishek.adblocker.vpn.packet.IpPacketParser
 import com.abhishek.adblocker.vpn.packet.PacketWriter
 import com.abhishek.adblocker.vpn.packet.UdpPacketParser
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-class DnsPacketHandler(private val vpnService: VpnService) {
+class DnsPacketHandler(private val vpnService: VpnService, private val coroutineScope: CoroutineScope) {
     private val upstreamDnsServer = InetAddress.getByName("8.8.8.8")
 
     fun processDnsPacket(ipPacketData: ByteArray): ByteArray? {
@@ -25,6 +27,10 @@ class DnsPacketHandler(private val vpnService: VpnService) {
         val dnsQuery = DnsRequestParser.parseDnsQuery(udpPacket.payload) ?: return null
 
         Logger.dnsQueryReceived(dnsQuery.hostname, dnsQuery.type)
+
+        coroutineScope.launch {
+            DomainObserver.emitDomain(dnsQuery.hostname)
+        }
 
         return if (BlockedDomains.isBlocked(dnsQuery.hostname)) {
             Logger.domainBlocked(dnsQuery.hostname)

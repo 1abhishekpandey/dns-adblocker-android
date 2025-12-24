@@ -20,6 +20,9 @@ Always-on VPN service with notification ensuring continuous ad blocking
 ### Interactive UI
 Material3 Compose interface with VPN toggle, blocking statistics, and app selection
 
+### Domain Monitor
+Real-time DNS query viewer with per-domain blocking controls and custom blocklist management
+
 ## Feature Details
 
 ### DNS Processing Pipeline
@@ -44,6 +47,21 @@ Material3 Compose interface with VPN toggle, blocking statistics, and app select
 - **Statistics Tracking**: Real-time counter of blocked requests
 - **Logging**: Detailed logs with emoji indicators for blocked/allowed domains
 
+### Domain Monitor
+- **Live Domain Feed**: Real-time display of DNS queries from selected apps
+- **Deduplication**: Each domain shown once with last-seen timestamp tracking
+- **Search & Filter**: Text search and "blocked only" filter for domain list
+- **Click-to-Block**: Tap any domain to block/unblock with confirmation dialog
+- **User Blocklist**: Custom blocked domains, persisted per-domain in DataStore
+- **Default Override**: Unblock default blocklist domains with user override capability
+- **Visual Indicators**: Blocked domains shown with strikethrough, red text, and close icon
+- **Smart Labeling**:
+  - "Default" badge for domains in default blocklist
+  - "User blocked" for custom blocks
+  - "Overridden" for unblocked default domains
+- **Reset to Default**: Clear all user customizations (blocks and overrides)
+- **State Synchronization**: Changes immediately sync to VPN service via DomainObserver
+
 ### Platform Integration
 - **Android VPN Service**: System VPN with BIND_VPN_SERVICE permission
 - **Navigation Compose**: Multi-screen navigation framework
@@ -51,9 +69,6 @@ Material3 Compose interface with VPN toggle, blocking statistics, and app select
 - **Coroutines & Flow**: Asynchronous packet processing and reactive UI updates
 
 ## Upcoming Features
-
-### Enhanced Blocklist Management
-Custom blocklist editor with domain add/remove functionality
 
 ### Traffic Statistics
 Bandwidth tracking per app and per domain with historical charts
