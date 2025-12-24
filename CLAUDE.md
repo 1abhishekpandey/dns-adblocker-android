@@ -144,16 +144,38 @@ adb shell dumpsys connectivity | grep -A 5 "Active network"
 - **Traffic Stats:** Can track bandwidth per app/domain
 - **Protocol Analysis:** Can identify protocols beyond DNS (HTTP, HTTPS, etc.)
 
+## Git Commit Workflow
+
+**CRITICAL: Follow these steps in order when creating commits:**
+
+1. **Review changes**: Run `git status` and `git diff` to understand what changed
+2. **Update FEATURES.md FIRST** (if applicable):
+   - If changes add/modify/remove ANY user-facing features → update `docs/FEATURES.md`
+   - Add new features to appropriate sections
+   - Update existing feature descriptions
+   - Remove deprecated features
+   - Commit FEATURES.md separately or with the feature changes
+3. **Draft commit message**: Follow conventional commits format (feat:, fix:, docs:, etc.)
+4. **Create commit**: Stage files and commit with descriptive message
+
+**Examples of changes requiring FEATURES.md updates:**
+- ✅ New UI components or screens
+- ✅ New filtering, sorting, or search capabilities
+- ✅ Modified app selection behavior
+- ✅ New VPN configuration options
+- ✅ Changed blocking logic or statistics
+- ❌ Code refactoring without behavior changes
+- ❌ Bug fixes that restore intended behavior
+- ❌ Internal implementation changes
+
 ## Additional Documentation
 
 Comprehensive documentation in `/docs`:
-- **FEATURES.md** - Brief one-to-two line descriptions of all app features (MUST update when adding/modifying features)
+- **FEATURES.md** - User-facing feature list (update with every feature change!)
 - **ARCHITECTURE.md** - Detailed architecture, data flow diagrams, threading model
 - **DEVELOPMENT.md** - Development setup, code style guidelines, testing strategy
 - **DEBUGGING.md** - Logger usage, logcat filtering, troubleshooting guide
 - **README.md** - User documentation, features, installation instructions
-
-**IMPORTANT:** When committing changes that add, modify, or remove features, always update `docs/FEATURES.md` to reflect the current feature set.
 
 ## Important Notes
 
