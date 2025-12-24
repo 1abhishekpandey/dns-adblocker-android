@@ -31,7 +31,9 @@ Material3 Compose interface with VPN toggle, blocking statistics, and app select
 
 ### App Selection System
 - **Installed Apps Repository**: Query all installed apps via PackageManager
+- **App Type Filters**: Toggle visibility of user apps and system apps with checkboxes
 - **Search & Filter**: Real-time search across app names and package names
+- **Smart Sorting**: Selected apps automatically appear at top of list
 - **Selection Persistence**: DataStore-based storage for selected app packages
 - **Change Tracking**: Unsaved changes detection with visible SAVE button
 - **Service Restart**: Automatic VPN service restart to apply new routing rules
