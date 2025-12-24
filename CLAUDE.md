@@ -147,10 +147,13 @@ adb shell dumpsys connectivity | grep -A 5 "Active network"
 ## Additional Documentation
 
 Comprehensive documentation in `/docs`:
+- **FEATURES.md** - Brief one-to-two line descriptions of all app features (MUST update when adding/modifying features)
 - **ARCHITECTURE.md** - Detailed architecture, data flow diagrams, threading model
 - **DEVELOPMENT.md** - Development setup, code style guidelines, testing strategy
 - **DEBUGGING.md** - Logger usage, logcat filtering, troubleshooting guide
 - **README.md** - User documentation, features, installation instructions
+
+**IMPORTANT:** When committing changes that add, modify, or remove features, always update `docs/FEATURES.md` to reflect the current feature set.
 
 ## Important Notes
 
