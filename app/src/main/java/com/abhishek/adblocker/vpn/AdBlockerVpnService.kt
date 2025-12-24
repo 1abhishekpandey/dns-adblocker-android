@@ -5,20 +5,24 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.core.app.NotificationCompat
 import com.abhishek.adblocker.MainActivity
 import com.abhishek.adblocker.R
+import com.abhishek.adblocker.data.preferences.VpnPreferencesRepository
 import com.abhishek.adblocker.util.Logger
 import com.abhishek.adblocker.vpn.dns.DnsPacketHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
@@ -31,6 +35,8 @@ class AdBlockerVpnService : VpnService() {
 
     private var inputStream: FileInputStream? = null
     private var outputStream: FileOutputStream? = null
+
+    private lateinit var vpnPreferencesRepository: VpnPreferencesRepository
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return when (intent?.action) {
@@ -52,6 +58,8 @@ class AdBlockerVpnService : VpnService() {
             return
         }
 
+        vpnPreferencesRepository = VpnPreferencesRepository(this)
+
         startForeground(NOTIFICATION_ID, createNotification())
 
         setupVpnInterface()
@@ -70,6 +78,8 @@ class AdBlockerVpnService : VpnService() {
             .setMtu(MTU)
             .setBlocking(false)
 
+        applyAppFiltering(builder)
+
         vpnInterface = builder.establish()
 
         if (vpnInterface == null) {
@@ -82,6 +92,28 @@ class AdBlockerVpnService : VpnService() {
         outputStream = FileOutputStream(vpnInterface!!.fileDescriptor)
 
         Logger.vpnInterfaceEstablished(VPN_ADDRESS)
+    }
+
+    private fun applyAppFiltering(builder: Builder) {
+        val selectedApps = runBlocking {
+            vpnPreferencesRepository.selectedAppPackages.first()
+        }
+
+        if (selectedApps.isEmpty()) {
+            Logger.i("No apps selected - VPN applies to all apps")
+            return
+        }
+
+        selectedApps.forEach { packageName ->
+            try {
+                builder.addAllowedApplication(packageName)
+                Logger.d("Added allowed application: $packageName")
+            } catch (e: PackageManager.NameNotFoundException) {
+                Logger.e("Package not found: $packageName", e)
+            }
+        }
+
+        Logger.i("Applied VPN filtering to ${selectedApps.size} apps")
     }
 
     private fun startPacketProcessing() {

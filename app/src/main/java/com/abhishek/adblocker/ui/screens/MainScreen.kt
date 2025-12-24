@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import com.abhishek.adblocker.ui.viewmodels.MainViewModelFactory
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
+    onNavigateToAppSelection: () -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.applicationContext)
     )
@@ -41,6 +43,7 @@ fun MainScreen(
     val context = LocalContext.current
     val vpnEnabled by viewModel.isVpnEnabled.collectAsState()
     val vpnState by viewModel.vpnState.collectAsState()
+    val selectedAppCount by viewModel.selectedAppCount.collectAsState()
 
     val vpnPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -80,6 +83,11 @@ fun MainScreen(
         )
 
         BlockedDomainsSection()
+
+        SelectedAppsSection(
+            selectedCount = selectedAppCount,
+            onSelectAppsClick = onNavigateToAppSelection
+        )
     }
 }
 
@@ -168,5 +176,43 @@ private fun BlockedDomainsSection() {
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
+    }
+}
+
+@Composable
+private fun SelectedAppsSection(
+    selectedCount: Int,
+    onSelectAppsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Selected Apps",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = if (selectedCount == 0) "All Apps" else selectedCount.toString(),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Button(
+            onClick = onSelectAppsClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Select Apps")
+        }
     }
 }

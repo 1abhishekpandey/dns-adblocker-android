@@ -24,9 +24,13 @@ class MainViewModel(
     private val _isVpnEnabled = MutableStateFlow(false)
     val isVpnEnabled: StateFlow<Boolean> = _isVpnEnabled.asStateFlow()
 
+    private val _selectedAppCount = MutableStateFlow(0)
+    val selectedAppCount: StateFlow<Int> = _selectedAppCount.asStateFlow()
+
     init {
         resetVpnStateOnStartup()
         observeVpnPreferences()
+        observeSelectedApps()
     }
 
     private fun resetVpnStateOnStartup() {
@@ -40,6 +44,14 @@ class MainViewModel(
             vpnPreferencesRepository.isVpnEnabled.collect { enabled ->
                 _isVpnEnabled.value = enabled
                 updateVpnState(enabled)
+            }
+        }
+    }
+
+    private fun observeSelectedApps() {
+        viewModelScope.launch {
+            vpnPreferencesRepository.selectedAppPackages.collect { selectedApps ->
+                _selectedAppCount.value = selectedApps.size
             }
         }
     }
