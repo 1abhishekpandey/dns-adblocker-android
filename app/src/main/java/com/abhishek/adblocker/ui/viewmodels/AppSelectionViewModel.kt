@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.abhishek.adblocker.data.apps.InstalledAppsRepository
 import com.abhishek.adblocker.data.preferences.VpnPreferencesRepository
 import com.abhishek.adblocker.domain.InstalledApp
+import com.abhishek.adblocker.domain.model.AppInfo
 import com.abhishek.adblocker.util.Logger
 import com.abhishek.adblocker.vpn.AdBlockerVpnService
 import kotlinx.coroutines.delay
@@ -66,7 +67,7 @@ class AppSelectionViewModel(
 
                 val appsWithSelection = allApps.map { app ->
                     app.copy(isSelected = app.packageName in filteredSavedPackages)
-                }
+                }.sortedWith(AppInfo.comparator())
 
                 _uiState.value = AppSelectionUiState.Success(
                     apps = appsWithSelection,
@@ -97,6 +98,28 @@ class AppSelectionViewModel(
     }
 
     /**
+     * Toggles the "show user apps" filter.
+     */
+    fun onShowUserAppsToggled() {
+        val currentState = _uiState.value
+        if (currentState is AppSelectionUiState.Success) {
+            _uiState.value = currentState.copy(showUserApps = !currentState.showUserApps)
+            Logger.d("Show user apps toggled: ${!currentState.showUserApps}")
+        }
+    }
+
+    /**
+     * Toggles the "show system apps" filter.
+     */
+    fun onShowSystemAppsToggled() {
+        val currentState = _uiState.value
+        if (currentState is AppSelectionUiState.Success) {
+            _uiState.value = currentState.copy(showSystemApps = !currentState.showSystemApps)
+            Logger.d("Show system apps toggled: ${!currentState.showSystemApps}")
+        }
+    }
+
+    /**
      * Toggles selection state for a specific app.
      *
      * Updates the app's selection status and recalculates selected count and hasChanges flag.
@@ -112,7 +135,7 @@ class AppSelectionViewModel(
                 } else {
                     app
                 }
-            }
+            }.sortedWith(AppInfo.comparator())
 
             val selectedCount = updatedApps.count { it.isSelected }
             val currentSelectedPackages = updatedApps.filter { it.isSelected }
@@ -139,6 +162,7 @@ class AppSelectionViewModel(
         val currentState = _uiState.value
         if (currentState is AppSelectionUiState.Success) {
             val clearedApps = currentState.apps.map { it.copy(isSelected = false) }
+                .sortedWith(AppInfo.comparator())
             val hasChanges = initialSelectedPackages.isNotEmpty()
 
             _uiState.value = currentState.copy(

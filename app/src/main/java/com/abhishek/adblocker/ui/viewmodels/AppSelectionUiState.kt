@@ -26,23 +26,37 @@ sealed class AppSelectionUiState {
         val apps: List<InstalledApp>,
         val searchQuery: String = "",
         val selectedCount: Int = 0,
-        val hasChanges: Boolean = false
+        val hasChanges: Boolean = false,
+        val showUserApps: Boolean = true,
+        val showSystemApps: Boolean = false
     ) : AppSelectionUiState() {
 
         /**
-         * Computed property that filters apps based on search query.
+         * Computed property that filters apps based on app type and search query.
          *
-         * Searches across app name and package name (case-insensitive).
-         * Returns all apps if search query is empty.
+         * First applies app type filtering based on showUserApps and showSystemApps flags.
+         * Then searches across app name and package name (case-insensitive).
+         * Returns all apps matching the filters if search query is empty.
          */
         val filteredApps: List<InstalledApp>
-            get() = if (searchQuery.isBlank()) {
-                apps
-            } else {
-                val query = searchQuery.lowercase()
-                apps.filter { app ->
-                    app.appName.lowercase().contains(query) ||
-                    app.packageName.lowercase().contains(query)
+            get() {
+                // First, apply app type filtering
+                val typeFiltered = apps.filter { app ->
+                    when {
+                        app.isSystemApp -> showSystemApps
+                        else -> showUserApps
+                    }
+                }
+
+                // Then, apply search query filtering
+                return if (searchQuery.isBlank()) {
+                    typeFiltered
+                } else {
+                    val query = searchQuery.lowercase()
+                    typeFiltered.filter { app ->
+                        app.appName.lowercase().contains(query) ||
+                        app.packageName.lowercase().contains(query)
+                    }
                 }
             }
     }

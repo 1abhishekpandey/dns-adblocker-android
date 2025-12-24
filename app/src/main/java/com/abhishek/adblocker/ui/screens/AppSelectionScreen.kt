@@ -121,7 +121,9 @@ fun AppSelectionScreen(
                     state = state,
                     onSearchQueryChanged = viewModel::onSearchQueryChanged,
                     onAppSelectionToggled = viewModel::onAppSelectionToggled,
-                    onClearAllClicked = viewModel::onClearAllClicked
+                    onClearAllClicked = viewModel::onClearAllClicked,
+                    onShowUserAppsToggled = viewModel::onShowUserAppsToggled,
+                    onShowSystemAppsToggled = viewModel::onShowSystemAppsToggled
                 )
                 is AppSelectionUiState.Error -> ErrorState(
                     message = state.message,
@@ -189,7 +191,9 @@ private fun SuccessState(
     state: AppSelectionUiState.Success,
     onSearchQueryChanged: (String) -> Unit,
     onAppSelectionToggled: (String) -> Unit,
-    onClearAllClicked: () -> Unit
+    onClearAllClicked: () -> Unit,
+    onShowUserAppsToggled: () -> Unit,
+    onShowSystemAppsToggled: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -197,6 +201,13 @@ private fun SuccessState(
         SearchBar(
             query = state.searchQuery,
             onQueryChanged = onSearchQueryChanged
+        )
+
+        AppTypeFilterRow(
+            showUserApps = state.showUserApps,
+            showSystemApps = state.showSystemApps,
+            onShowUserAppsToggled = onShowUserAppsToggled,
+            onShowSystemAppsToggled = onShowSystemAppsToggled
         )
 
         InfoSection(
@@ -246,6 +257,51 @@ private fun SearchBar(
         ),
         shape = MaterialTheme.shapes.medium
     )
+}
+
+@Composable
+private fun AppTypeFilterRow(
+    showUserApps: Boolean,
+    showSystemApps: Boolean,
+    onShowUserAppsToggled: () -> Unit,
+    onShowSystemAppsToggled: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable(onClick = onShowUserAppsToggled)
+        ) {
+            Checkbox(
+                checked = showUserApps,
+                onCheckedChange = { onShowUserAppsToggled() }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "Show user apps",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable(onClick = onShowSystemAppsToggled)
+        ) {
+            Checkbox(
+                checked = showSystemApps,
+                onCheckedChange = { onShowSystemAppsToggled() }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "Show system apps",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
 }
 
 @Composable
