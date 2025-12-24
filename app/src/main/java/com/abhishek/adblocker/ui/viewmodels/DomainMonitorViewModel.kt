@@ -19,8 +19,6 @@ class DomainMonitorViewModel(
     private val _uiState = MutableStateFlow<DomainMonitorUiState>(DomainMonitorUiState.Empty)
     val uiState: StateFlow<DomainMonitorUiState> = _uiState.asStateFlow()
 
-    private val observedDomainsMap: MutableMap<String, ObservedDomain> = mutableMapOf()
-
     init {
         observeDomains()
         observeUserBlockedDomainsChanges()
@@ -28,8 +26,8 @@ class DomainMonitorViewModel(
 
     private fun observeDomains() {
         viewModelScope.launch {
-            DomainObserver.observedDomainsFlow.collect { hostname ->
-                addObservedDomain(hostname)
+            DomainObserver.observedDomainsFlow.collect { domainsMap ->
+                updateUiState(domainsMap.values.toList())
             }
         }
     }
@@ -38,60 +36,23 @@ class DomainMonitorViewModel(
         viewModelScope.launch {
             vpnPreferencesRepository.userBlockedDomains.collect { userBlockedDomains ->
                 BlockedDomains.updateUserDomains(userBlockedDomains)
-                refreshBlockedStates()
+                DomainObserver.updateBlockedStates(userBlockedDomains, emptySet())
             }
         }
         viewModelScope.launch {
-            vpnPreferencesRepository.userUnblockedDefaultDomains.collect {
-                refreshBlockedStates()
+            vpnPreferencesRepository.userUnblockedDefaultDomains.collect { userUnblockedDomains ->
+                DomainObserver.updateBlockedStates(emptySet(), userUnblockedDomains)
             }
         }
     }
 
-    private fun addObservedDomain(hostname: String) {
-        val normalized = hostname.lowercase().trimEnd('.')
-
-        val isBlocked = BlockedDomains.isBlocked(normalized)
-        val isUserBlocked = BlockedDomains.isBlockedByUser(normalized)
-
-        val existingDomain = observedDomainsMap[normalized]
-        val updatedDomain = if (existingDomain != null) {
-            existingDomain.copy(
-                isBlocked = isBlocked,
-                isUserBlocked = isUserBlocked,
-                lastSeenTimestamp = System.currentTimeMillis()
-            )
-        } else {
-            ObservedDomain(
-                hostname = normalized,
-                isBlocked = isBlocked,
-                isUserBlocked = isUserBlocked,
-                lastSeenTimestamp = System.currentTimeMillis()
-            )
-        }
-
-        observedDomainsMap[normalized] = updatedDomain
-        updateUiState()
-    }
-
-    private fun refreshBlockedStates() {
-        observedDomainsMap.replaceAll { hostname, domain ->
-            domain.copy(
-                isBlocked = BlockedDomains.isBlocked(hostname),
-                isUserBlocked = BlockedDomains.isBlockedByUser(hostname)
-            )
-        }
-        updateUiState()
-    }
-
-    private fun updateUiState() {
-        if (observedDomainsMap.isEmpty()) {
+    private fun updateUiState(domains: List<ObservedDomain>) {
+        if (domains.isEmpty()) {
             _uiState.value = DomainMonitorUiState.Empty
             return
         }
 
-        val sortedDomains = observedDomainsMap.values
-            .sortedByDescending { it.lastSeenTimestamp }
+        val sortedDomains = domains.sortedByDescending { it.lastSeenTimestamp }
 
         val currentState = _uiState.value
         val searchQuery = if (currentState is DomainMonitorUiState.Monitoring) {
@@ -165,8 +126,7 @@ class DomainMonitorViewModel(
     }
 
     fun clearObservedDomains() {
-        observedDomainsMap.clear()
-        _uiState.value = DomainMonitorUiState.Empty
+        DomainObserver.reset()
     }
 
     fun resetUserBlockedDomains() {

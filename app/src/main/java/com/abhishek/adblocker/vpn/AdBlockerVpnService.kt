@@ -16,6 +16,7 @@ import com.abhishek.adblocker.data.blocklist.BlockedDomains
 import com.abhishek.adblocker.data.preferences.VpnPreferencesRepository
 import com.abhishek.adblocker.util.Logger
 import com.abhishek.adblocker.vpn.dns.DnsPacketHandler
+import com.abhishek.adblocker.vpn.dns.DomainObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -122,12 +123,14 @@ class AdBlockerVpnService : VpnService() {
         serviceScope.launch {
             vpnPreferencesRepository.userBlockedDomains.collect { domains ->
                 BlockedDomains.updateUserDomains(domains)
+                DomainObserver.updateBlockedStates(domains, emptySet())
                 Logger.d("Updated user blocked domains: ${domains.size} domains")
             }
         }
         serviceScope.launch {
             vpnPreferencesRepository.userUnblockedDefaultDomains.collect { domains ->
                 BlockedDomains.updateUserUnblockedDefaultDomains(domains)
+                DomainObserver.updateBlockedStates(emptySet(), domains)
                 Logger.d("Updated user unblocked default domains: ${domains.size} domains")
             }
         }
