@@ -63,9 +63,14 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(NavRoutes.DOMAIN_MONITOR) {
+                            val context = LocalContext.current
                             DomainMonitorScreen(
                                 onNavigateBack = {
                                     navController.popBackStack()
+                                },
+                                isVpnActive = isVpnActive,
+                                onRestartVpn = {
+                                    mainViewModel.restartVpn(context)
                                 }
                             )
                         }

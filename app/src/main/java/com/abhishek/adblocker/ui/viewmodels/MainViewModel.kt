@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.abhishek.adblocker.data.preferences.VpnPreferencesRepository
 import com.abhishek.adblocker.domain.model.VpnState
 import com.abhishek.adblocker.vpn.AdBlockerVpnService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -81,6 +82,14 @@ class MainViewModel(
             } else {
                 startVpnService(context)
             }
+        }
+    }
+
+    fun restartVpn(context: Context) {
+        viewModelScope.launch {
+            stopVpnService(context)
+            delay(300)
+            startVpnService(context)
         }
     }
 

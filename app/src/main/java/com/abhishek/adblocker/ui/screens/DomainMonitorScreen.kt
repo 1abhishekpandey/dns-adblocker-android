@@ -63,6 +63,8 @@ import com.abhishek.adblocker.ui.viewmodels.DomainMonitorViewModelFactory
 @Composable
 fun DomainMonitorScreen(
     onNavigateBack: () -> Unit,
+    isVpnActive: Boolean = false,
+    onRestartVpn: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DomainMonitorViewModel = viewModel(
         factory = DomainMonitorViewModelFactory(
@@ -139,8 +141,12 @@ fun DomainMonitorScreen(
     domainToToggle?.let { domain ->
         BlockUnblockDialog(
             domain = domain,
+            isVpnActive = isVpnActive,
             onConfirm = {
                 viewModel.toggleDomainBlocked(domain.hostname)
+                if (isVpnActive) {
+                    onRestartVpn()
+                }
                 domainToToggle = null
             },
             onDismiss = { domainToToggle = null }
@@ -439,17 +445,23 @@ private fun ResetConfirmationDialog(
 @Composable
 private fun BlockUnblockDialog(
     domain: ObservedDomain,
+    isVpnActive: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val title = if (domain.isBlocked) "Unblock Domain?" else "Block Domain?"
-    val message = when {
+    val baseMessage = when {
         domain.isBlocked && domain.isUserBlocked ->
             "Unblock ${domain.hostname}? (User blocked)"
         domain.isBlocked && !domain.isUserBlocked ->
             "Unblock ${domain.hostname}? (Default blocklist - will override)"
         else ->
             "Block ${domain.hostname}?"
+    }
+    val message = if (isVpnActive) {
+        "$baseMessage\n\nVPN will restart to apply changes immediately."
+    } else {
+        baseMessage
     }
     val confirmText = if (domain.isBlocked) "Unblock" else "Block"
 

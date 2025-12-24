@@ -61,6 +61,7 @@ Real-time DNS query viewer with per-domain blocking controls and custom blocklis
   - "Overridden" for unblocked default domains
 - **Reset to Default**: Clear all user customizations (blocks and overrides)
 - **State Synchronization**: Changes immediately sync to VPN service via DomainObserver
+- **Auto VPN Restart**: VPN automatically restarts after blocking/unblocking to clear DNS caches
 
 ### Platform Integration
 - **Android VPN Service**: System VPN with BIND_VPN_SERVICE permission
