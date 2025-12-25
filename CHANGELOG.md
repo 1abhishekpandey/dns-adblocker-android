@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.0-beta.3
+
+### Features
+- Added DNS server selection for improved speed - choose between Google, Cloudflare, OpenDNS, and Quad9 DNS servers
+
+### CI/CD
+- Added build GitHub Actions workflow
+
 ## v1.2.0-beta.2
 
 ### Fixes
