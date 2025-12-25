@@ -65,19 +65,24 @@ class AdBlockerVpnService : VpnService() {
 
         startForeground(NOTIFICATION_ID, createNotification())
 
-        setupVpnInterface()
-        dnsPacketHandler = DnsPacketHandler(this, serviceScope)
+        val selectedDnsServer = runBlocking {
+            vpnPreferencesRepository.selectedDnsServer.first()
+        }
+        Logger.i("Using DNS server: $selectedDnsServer")
+
+        setupVpnInterface(selectedDnsServer)
+        dnsPacketHandler = DnsPacketHandler(this, serviceScope, selectedDnsServer)
         startPacketProcessing()
 
         Logger.vpnStarted()
     }
 
-    private fun setupVpnInterface() {
+    private fun setupVpnInterface(dnsServer: String) {
         val builder = Builder()
             .setSession(getString(R.string.app_name))
             .addAddress(VPN_ADDRESS, VPN_PREFIX_LENGTH)
-            .addRoute(DNS_SERVER, 32)  // Only route DNS traffic to 8.8.8.8
-            .addDnsServer(DNS_SERVER)
+            .addRoute(dnsServer, 32)  // Route DNS traffic to selected DNS server
+            .addDnsServer(dnsServer)
             .setMtu(MTU)
             .setBlocking(false)
 
@@ -266,7 +271,6 @@ class AdBlockerVpnService : VpnService() {
 
         private const val VPN_ADDRESS = "10.0.0.2"
         private const val VPN_PREFIX_LENGTH = 32
-        private const val DNS_SERVER = "8.8.8.8"
         private const val MTU = 1500
         private const val BUFFER_SIZE = 32767
     }

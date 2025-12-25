@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.abhishek.adblocker.util.Logger
@@ -18,6 +19,7 @@ class VpnPreferencesRepository(private val context: Context) {
     private val selectedAppsKey = stringSetPreferencesKey("selected_app_packages")
     private val userBlockedDomainsKey = stringSetPreferencesKey("user_blocked_domains")
     private val userUnblockedDefaultDomainsKey = stringSetPreferencesKey("user_unblocked_default_domains")
+    private val selectedDnsServerKey = stringPreferencesKey("selected_dns_server")
 
     val isVpnEnabled: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
@@ -37,6 +39,11 @@ class VpnPreferencesRepository(private val context: Context) {
     val userUnblockedDefaultDomains: Flow<Set<String>> = context.dataStore.data
         .map { preferences ->
             preferences[userUnblockedDefaultDomainsKey] ?: emptySet()
+        }
+
+    val selectedDnsServer: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[selectedDnsServerKey] ?: "8.8.8.8"
         }
 
     suspend fun setVpnEnabled(enabled: Boolean) {
@@ -88,6 +95,27 @@ class VpnPreferencesRepository(private val context: Context) {
     suspend fun clearUserUnblockedDefaultDomains() {
         context.dataStore.edit { preferences ->
             preferences[userUnblockedDefaultDomainsKey] = emptySet()
+        }
+    }
+
+    suspend fun setDnsServer(address: String) {
+        if (isValidIpAddress(address)) {
+            context.dataStore.edit { preferences ->
+                preferences[selectedDnsServerKey] = address
+            }
+            Logger.i("DNS server preference updated to: $address")
+        } else {
+            Logger.e("Invalid DNS server address: $address")
+            throw IllegalArgumentException("Invalid IP address: $address")
+        }
+    }
+
+    private fun isValidIpAddress(ip: String): Boolean {
+        val ipPattern = """^(\d{1,3}\.){3}\d{1,3}$""".toRegex()
+        return if (ipPattern.matches(ip)) {
+            ip.split(".").all { it.toIntOrNull()?.let { num -> num in 0..255 } ?: false }
+        } else {
+            false
         }
     }
 }

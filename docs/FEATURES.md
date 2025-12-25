@@ -23,13 +23,16 @@ Material3 Compose interface with VPN toggle, blocking statistics, and app select
 ### Domain Monitor
 Real-time DNS query viewer with per-domain blocking controls and custom blocklist management
 
+### DNS Server Selection
+Choose from popular DNS providers or configure custom DNS server for improved speed and privacy
+
 ## Feature Details
 
 ### DNS Processing Pipeline
 - **Packet Interception**: TUN interface captures all network packets at 10.0.0.2/32
 - **Protocol Parsing**: IP/UDP/DNS packet analysis using custom parsers and dnsjava
 - **Domain Filtering**: Real-time blocklist matching with NXDOMAIN responses
-- **DNS Forwarding**: Allowed queries forwarded to Google DNS (8.8.8.8)
+- **DNS Forwarding**: Allowed queries forwarded to user-selected DNS server (Google, Cloudflare, Quad9, OpenDNS, or custom)
 - **Response Handling**: DNS responses reconstructed and written back to TUN
 
 ### App Selection System
@@ -63,6 +66,19 @@ Real-time DNS query viewer with per-domain blocking controls and custom blocklis
 - **State Synchronization**: Changes immediately sync to VPN service via DomainObserver
 - **Auto VPN Restart**: VPN automatically restarts after blocking/unblocking to clear DNS caches
 
+### DNS Server Selection
+- **Preset DNS Providers**: Quick selection from curated list:
+  - Google (8.8.8.8) - Fast and reliable
+  - Cloudflare (1.1.1.1) - Privacy-focused, fastest response time
+  - Quad9 (9.9.9.9) - Security and privacy focused
+  - OpenDNS (208.67.222.222) - Content filtering, good performance
+- **Custom DNS Server**: Manual IP address entry for any DNS server
+- **IP Validation**: Real-time validation ensures valid IPv4 address format
+- **Settings Persistence**: Selected DNS server saved in DataStore preferences
+- **Auto VPN Restart**: VPN automatically restarts when DNS server changes to apply new routing
+- **Visual Feedback**: Radio button selection with DNS descriptions for informed choice
+- **Error Handling**: Clear error messages for invalid DNS configurations
+
 ### Platform Integration
 - **Android VPN Service**: System VPN with BIND_VPN_SERVICE permission
 - **Navigation Compose**: Multi-screen navigation framework
@@ -73,9 +89,6 @@ Real-time DNS query viewer with per-domain blocking controls and custom blocklis
 
 ### Traffic Statistics
 Bandwidth tracking per app and per domain with historical charts
-
-### Custom DNS Server
-Configurable upstream DNS server (Cloudflare, Quad9, etc.)
 
 ### HTTP/HTTPS Inspection
 Protocol-level traffic analysis beyond DNS filtering
