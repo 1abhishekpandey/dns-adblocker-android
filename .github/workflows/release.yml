@@ -7,8 +7,10 @@ on:
 
 jobs:
   release:
-    # Only run if the PR was merged (not just closed)
-    if: github.event.pull_request.merged == true
+    # Only run if the PR was merged (not just closed) and is a feat or fix
+    if: |
+      github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.title, 'feat:') || startsWith(github.event.pull_request.title, 'fix:'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
