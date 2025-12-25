@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  release:
+    # Only run if the PR was merged (not just closed) and is a feat or fix
+    if: |
+      github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.title, 'feat:') || startsWith(github.event.pull_request.title, 'fix:'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get last tag
+        id: get_last_tag
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+          echo "Last tag: $LAST_TAG"
+
+      - name: Get commits since last tag
+        id: get_commits
+        run: |
+          LAST_TAG="${{ steps.get_last_tag.outputs.last_tag }}"
+          if [ "$LAST_TAG" = "v0.0.0" ]; then
+            COMMITS=$(git log --oneline --pretty=format:"%h %s" | head -20)
+          else
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"%h %s")
+          fi
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update Changelog with Claude Code
+        id: claude-changelog
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are updating the CHANGELOG.md for a new release.
+
+            LAST TAG: ${{ steps.get_last_tag.outputs.last_tag }}
+
+            COMMITS SINCE LAST TAG:
+            ${{ steps.get_commits.outputs.commits }}
+
+            PR TITLE: ${{ github.event.pull_request.title }}
+            PR BODY: ${{ github.event.pull_request.body }}
+
+            TASKS:
+            1. Read the current CHANGELOG.md file
+            2. Analyze the commits and PR information to understand what changed
+            3. Determine the next version number following semver:
+               - If there are breaking changes or major features, bump major version
+               - If there are new features (feat:), bump minor version
+               - If there are only fixes (fix:), bump patch version
+               - Keep the -beta suffix if the last version had it
+            4. Add a new section at the top of the changelog (after the # Changelog header) with:
+               - The new version number as a ## heading
+               - Organized sections for ### Features, ### Fixes, ### Changes as applicable
+               - Clear, user-friendly descriptions of changes
+            5. Save the updated CHANGELOG.md
+            6. Output ONLY the new version number (e.g., v1.2.1-beta.3) as your final message - nothing else
+
+            IMPORTANT: Your final output must be ONLY the version number, no other text.
+
+      - name: Extract version from Claude output
+        id: extract_version
+        run: |
+          # Check if Claude Code execution was successful
+          if [ "${{ steps.claude-changelog.outputs.conclusion }}" != "success" ]; then
+            echo "::error::Claude Code failed to update changelog"
+            exit 1
+          fi
+
+          # Read the execution log file to get Claude's output
+          EXECUTION_LOG="${{ steps.claude-changelog.outputs.execution_file }}"
+          if [ ! -f "$EXECUTION_LOG" ]; then
+            echo "::error::Execution log file not found: $EXECUTION_LOG"
+            exit 1
+          fi
+
+          # Parse the execution log JSON to extract the output
+          # The output is typically in a field like 'output' or in the last message
+          CLAUDE_OUTPUT=$(cat "$EXECUTION_LOG" | jq -r '.output // empty' 2>/dev/null || echo "")
+
+          if [ -z "$CLAUDE_OUTPUT" ]; then
+            # Fallback: try to extract from messages array
+            CLAUDE_OUTPUT=$(cat "$EXECUTION_LOG" | jq -r '.messages[-1].content // empty' 2>/dev/null || echo "")
+          fi
+
+          if [ -z "$CLAUDE_OUTPUT" ]; then
+            echo "::error::Could not extract Claude's output from execution log"
+            echo "Execution log content:"
+            cat "$EXECUTION_LOG"
+            exit 1
+          fi
+
+          # Extract version from Claude's output
+          VERSION=$(echo "$CLAUDE_OUTPUT" | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -1)
+
+          # Validate that a version was extracted
+          if [ -z "$VERSION" ]; then
+            echo "::error::Failed to extract version from Claude output"
+            echo "Claude output was: $CLAUDE_OUTPUT"
+            exit 1
+          fi
+
+          # Ensure it starts with 'v'
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v$VERSION"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Commit Changelog
+        run: |
+          git add CHANGELOG.md
+          git commit -m "docs: update changelog for ${{ steps.extract_version.outputs.version }}" || echo "No changes to commit"
+          git push origin main
+
+      - name: Create and Push Tag
+        run: |
+          VERSION="${{ steps.extract_version.outputs.version }}"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
+      - name: Extract Release Notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.extract_version.outputs.version }}"
+          # Extract the section for this version from CHANGELOG.md
+          # Get content between this version header and the next version header
+          NOTES=$(awk "/^## ${VERSION}/,/^## v[0-9]/" CHANGELOG.md | sed '1d;$d')
+          if [ -z "$NOTES" ]; then
+            NOTES="Release ${VERSION}"
+          fi
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.extract_version.outputs.version }}
+          name: Release ${{ steps.extract_version.outputs.version }}
+          body: ${{ steps.release_notes.outputs.notes }}
+          draft: false
+          prerelease: ${{ contains(steps.extract_version.outputs.version, 'beta') || contains(steps.extract_version.outputs.version, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
