@@ -83,14 +83,50 @@ jobs:
       - name: Extract version from Claude output
         id: extract_version
         run: |
-          # Get Claude's output and extract version
-          VERSION="${{ steps.claude-changelog.outputs.result }}"
-          # Clean up the version string - extract just the version pattern
-          VERSION=$(echo "$VERSION" | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -1)
+          # Check if Claude Code execution was successful
+          if [ "${{ steps.claude-changelog.outputs.conclusion }}" != "success" ]; then
+            echo "::error::Claude Code failed to update changelog"
+            exit 1
+          fi
+
+          # Read the execution log file to get Claude's output
+          EXECUTION_LOG="${{ steps.claude-changelog.outputs.execution_file }}"
+          if [ ! -f "$EXECUTION_LOG" ]; then
+            echo "::error::Execution log file not found: $EXECUTION_LOG"
+            exit 1
+          fi
+
+          # Parse the execution log JSON to extract the output
+          # The output is typically in a field like 'output' or in the last message
+          CLAUDE_OUTPUT=$(cat "$EXECUTION_LOG" | jq -r '.output // empty' 2>/dev/null || echo "")
+
+          if [ -z "$CLAUDE_OUTPUT" ]; then
+            # Fallback: try to extract from messages array
+            CLAUDE_OUTPUT=$(cat "$EXECUTION_LOG" | jq -r '.messages[-1].content // empty' 2>/dev/null || echo "")
+          fi
+
+          if [ -z "$CLAUDE_OUTPUT" ]; then
+            echo "::error::Could not extract Claude's output from execution log"
+            echo "Execution log content:"
+            cat "$EXECUTION_LOG"
+            exit 1
+          fi
+
+          # Extract version from Claude's output
+          VERSION=$(echo "$CLAUDE_OUTPUT" | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?' | head -1)
+
+          # Validate that a version was extracted
+          if [ -z "$VERSION" ]; then
+            echo "::error::Failed to extract version from Claude output"
+            echo "Claude output was: $CLAUDE_OUTPUT"
+            exit 1
+          fi
+
           # Ensure it starts with 'v'
           if [[ ! "$VERSION" =~ ^v ]]; then
             VERSION="v$VERSION"
           fi
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
