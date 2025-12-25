@@ -8,7 +8,7 @@
 ### CI/CD
 - Added build GitHub Actions workflow
 
-## v1.2.0-beta.2
+## v1.0.0-beta.2
 
 ### Fixes
 - Fixed domain monitor not updating when app is in background
@@ -19,7 +19,7 @@
 - Added per-app VPN filtering with app selection UI
 - Added app type filters to view apps by category (System/User/Selected)
 
-## v1.1.0-beta.1
+## v1.0.0-beta.1
 
 ### Features
 - Implemented VPN-based ad blocker for Android
