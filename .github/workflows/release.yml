@@ -4,20 +4,13 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
-  push:
-    branches: [main]
 
 jobs:
   release:
-    # Run if:
-    # - PR was merged and title starts with feat: or fix:
-    # - Direct push to main and commit message starts with feat: or fix:
+    # Only run if the PR was merged (not just closed) and is a feat or fix
     if: |
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.merged == true &&
-       (startsWith(github.event.pull_request.title, 'feat:') || startsWith(github.event.pull_request.title, 'fix:'))) ||
-      (github.event_name == 'push' &&
-       (startsWith(github.event.head_commit.message, 'feat:') || startsWith(github.event.head_commit.message, 'fix:')))
+      github.event.pull_request.merged == true &&
+      (startsWith(github.event.pull_request.title, 'feat:') || startsWith(github.event.pull_request.title, 'fix:'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -69,12 +62,12 @@ jobs:
             COMMITS SINCE LAST TAG:
             ${{ steps.get_commits.outputs.commits }}
 
-            ${{ github.event_name == 'pull_request' && format('PR TITLE: {0}', github.event.pull_request.title) || format('COMMIT MESSAGE: {0}', github.event.head_commit.message) }}
-            ${{ github.event_name == 'pull_request' && format('PR BODY: {0}', github.event.pull_request.body) || '' }}
+            PR TITLE: ${{ github.event.pull_request.title }}
+            PR BODY: ${{ github.event.pull_request.body }}
 
             TASKS:
             1. Read the current CHANGELOG.md file
-            2. Analyze the commits and commit/PR information to understand what changed
+            2. Analyze the commits and PR information to understand what changed
             3. Determine the next version number following semver:
                - If there are breaking changes or major features, bump major version
                - If there are new features (feat:), bump minor version
