@@ -11,8 +11,12 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-class DnsPacketHandler(private val vpnService: VpnService, private val coroutineScope: CoroutineScope) {
-    private val upstreamDnsServer = InetAddress.getByName("8.8.8.8")
+class DnsPacketHandler(
+    private val vpnService: VpnService,
+    private val coroutineScope: CoroutineScope,
+    dnsServerAddress: String = "8.8.8.8"
+) {
+    private val upstreamDnsServer = InetAddress.getByName(dnsServerAddress)
 
     fun processDnsPacket(ipPacketData: ByteArray): ByteArray? {
         val ipPacket = IpPacketParser.parse(ipPacketData) ?: return null

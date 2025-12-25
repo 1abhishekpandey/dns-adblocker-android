@@ -19,6 +19,7 @@ import com.abhishek.adblocker.ui.navigation.NavRoutes
 import com.abhishek.adblocker.ui.screens.AppSelectionScreen
 import com.abhishek.adblocker.ui.screens.DomainMonitorScreen
 import com.abhishek.adblocker.ui.screens.MainScreen
+import com.abhishek.adblocker.ui.screens.SettingsScreen
 import com.abhishek.adblocker.ui.theme.AdBlockerTheme
 import com.abhishek.adblocker.ui.viewmodels.MainViewModel
 import com.abhishek.adblocker.ui.viewmodels.MainViewModelFactory
@@ -49,6 +50,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToDomainMonitor = {
                                     navController.navigate(NavRoutes.DOMAIN_MONITOR)
+                                },
+                                onNavigateToSettings = {
+                                    navController.navigate(NavRoutes.SETTINGS)
                                 }
                             )
                         }
@@ -72,6 +76,15 @@ class MainActivity : ComponentActivity() {
                                 onRestartVpn = {
                                     mainViewModel.restartVpn(context)
                                 }
+                            )
+                        }
+
+                        composable(NavRoutes.SETTINGS) {
+                            SettingsScreen(
+                                onNavigateBack = {
+                                    navController.popBackStack()
+                                },
+                                isVpnActive = isVpnActive
                             )
                         }
                     }

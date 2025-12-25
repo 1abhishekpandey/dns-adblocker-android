@@ -37,6 +37,7 @@ fun MainScreen(
     modifier: Modifier = Modifier,
     onNavigateToAppSelection: () -> Unit = {},
     onNavigateToDomainMonitor: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: MainViewModel = viewModel(
         factory = MainViewModelFactory(LocalContext.current.applicationContext)
     )
@@ -93,6 +94,8 @@ fun MainScreen(
         if (vpnEnabled && selectedAppCount > 0) {
             DomainMonitorSection(onMonitorDomainsClick = onNavigateToDomainMonitor)
         }
+
+        SettingsSection(onSettingsClick = onNavigateToSettings)
     }
 }
 
@@ -245,5 +248,19 @@ private fun DomainMonitorSection(
         ) {
             Text("Monitor Domains")
         }
+    }
+}
+
+@Composable
+private fun SettingsSection(
+    onSettingsClick: () -> Unit
+) {
+    Button(
+        onClick = onSettingsClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Text("Settings")
     }
 }
