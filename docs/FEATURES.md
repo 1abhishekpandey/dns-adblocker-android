@@ -55,6 +55,8 @@ Choose from popular DNS providers or configure custom DNS server for improved sp
 - **Deduplication**: Each domain shown once with last-seen timestamp tracking
 - **Search & Filter**: Text search and "blocked only" filter for domain list
 - **Click-to-Block**: Tap any domain to block/unblock with confirmation dialog
+- **Parent Domain Suggestions**: Smart suggestions to block parent domains (e.g., when blocking `a.example.com`, suggests blocking `example.com` to block all `*.example.com` subdomains)
+- **Subdomain Blocking**: Blocking any domain automatically blocks all its subdomains
 - **User Blocklist**: Custom blocked domains, persisted per-domain in DataStore
 - **Default Override**: Unblock default blocklist domains with user override capability
 - **Visual Indicators**: Blocked domains shown with strikethrough, red text, and close icon
