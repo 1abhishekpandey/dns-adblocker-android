@@ -450,13 +450,22 @@ private fun BlockUnblockDialog(
     onDismiss: () -> Unit
 ) {
     val title = if (domain.isBlocked) "Unblock Domain?" else "Block Domain?"
+    val parentDomain = extractParentDomain(domain.hostname)
+    val hasParentDomain = parentDomain != null && parentDomain != domain.hostname
+
     val baseMessage = when {
         domain.isBlocked && domain.isUserBlocked ->
             "Unblock ${domain.hostname}? (User blocked)"
         domain.isBlocked && !domain.isUserBlocked ->
             "Unblock ${domain.hostname}? (Default blocklist - will override)"
-        else ->
-            "Block ${domain.hostname}?"
+        else -> {
+            val msg = "Block ${domain.hostname}?"
+            if (hasParentDomain && parentDomain != null) {
+                "$msg\n\n💡 Tip: Consider blocking the parent domain '$parentDomain' instead to block all subdomains including:\n• ${domain.hostname}\n• All other *.${parentDomain} domains"
+            } else {
+                "$msg\n\nThis will block ${domain.hostname} and all its subdomains."
+            }
+        }
     }
     val message = if (isVpnActive) {
         "$baseMessage\n\nVPN will restart to apply changes immediately."
@@ -480,4 +489,18 @@ private fun BlockUnblockDialog(
             }
         }
     )
+}
+
+/**
+ * Extracts the parent domain from a hostname.
+ * Example: "a.example.com" -> "example.com"
+ *          "example.com" -> null
+ */
+private fun extractParentDomain(hostname: String): String? {
+    val parts = hostname.split(".")
+    return if (parts.size > 2) {
+        parts.takeLast(2).joinToString(".")
+    } else {
+        null
+    }
 }
