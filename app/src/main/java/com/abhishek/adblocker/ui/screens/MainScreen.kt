@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.VpnService
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -149,6 +150,7 @@ private fun VpnToggleSection(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onToggle(!enabled) }
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -160,7 +162,7 @@ private fun VpnToggleSection(
         )
         Switch(
             checked = enabled,
-            onCheckedChange = onToggle
+            onCheckedChange = null
         )
     }
 }
