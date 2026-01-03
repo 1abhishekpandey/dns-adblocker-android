@@ -160,11 +160,8 @@ class AdBlockerVpnService : VpnService() {
                 val length = input.read(buffer.array())
 
                 if (length > 0) {
-                    val packetData = buffer.array().copyOf(length)
-
-                    serviceScope.launch {
-                        processSinglePacket(packetData, output)
-                    }
+                    // Process packet sequentially without spawning coroutine
+                    processSinglePacket(buffer.array(), length, output)
                 }
             } catch (e: Exception) {
                 if (serviceScope.isActive) {
@@ -177,9 +174,12 @@ class AdBlockerVpnService : VpnService() {
         Logger.packetProcessingStopped()
     }
 
-    private fun processSinglePacket(packetData: ByteArray, output: FileOutputStream) {
+    private fun processSinglePacket(buffer: ByteArray, length: Int, output: FileOutputStream) {
         try {
             val handler = dnsPacketHandler ?: return
+
+            // Create a packet slice to avoid processing full buffer
+            val packetData = if (length == buffer.size) buffer else buffer.copyOf(length)
             val responsePacket = handler.processDnsPacket(packetData)
 
             if (responsePacket != null) {
@@ -206,6 +206,7 @@ class AdBlockerVpnService : VpnService() {
 
         serviceScope.cancel()
 
+        dnsPacketHandler?.cleanup()
         dnsPacketHandler = null
 
         inputStream?.close()

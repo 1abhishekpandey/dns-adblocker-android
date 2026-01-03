@@ -18,6 +18,14 @@ class DnsPacketHandler(
 ) {
     private val upstreamDnsServer = InetAddress.getByName(dnsServerAddress)
 
+    // Reusable socket for DNS forwarding to reduce battery drain
+    private val dnsSocket: DatagramSocket by lazy {
+        DatagramSocket().apply {
+            vpnService.protect(this)
+            soTimeout = 5000
+        }
+    }
+
     fun processDnsPacket(ipPacketData: ByteArray): ByteArray? {
         val ipPacket = IpPacketParser.parse(ipPacketData) ?: return null
 
@@ -56,12 +64,7 @@ class DnsPacketHandler(
         udpPacket: com.abhishek.adblocker.vpn.packet.UdpPacket,
         dnsQuery: DnsQuery
     ): ByteArray? {
-        var socket: DatagramSocket? = null
         return try {
-            socket = DatagramSocket()
-            vpnService.protect(socket)
-            socket.soTimeout = 5000
-
             Logger.dnsForwarded(dnsQuery.hostname, upstreamDnsServer.hostAddress ?: "8.8.8.8")
 
             val sendPacket = DatagramPacket(
@@ -70,27 +73,39 @@ class DnsPacketHandler(
                 upstreamDnsServer,
                 53
             )
-            socket.send(sendPacket)
 
-            val receiveBuffer = ByteArray(1024)
-            val receivePacket = DatagramPacket(receiveBuffer, receiveBuffer.size)
-            socket.receive(receivePacket)
+            // Synchronize socket access to prevent concurrent access issues
+            synchronized(dnsSocket) {
+                dnsSocket.send(sendPacket)
 
-            val dnsResponse = receiveBuffer.copyOf(receivePacket.length)
-            Logger.d("DNS response received for ${dnsQuery.hostname}, size: ${dnsResponse.size}")
+                val receiveBuffer = ByteArray(1024)
+                val receivePacket = DatagramPacket(receiveBuffer, receiveBuffer.size)
+                dnsSocket.receive(receivePacket)
 
-            PacketWriter.buildIpUdpPacket(
-                sourceIp = ipPacket.destIp,
-                destIp = ipPacket.sourceIp,
-                sourcePort = udpPacket.destPort,
-                destPort = udpPacket.sourcePort,
-                dnsPayload = dnsResponse
-            )
+                val dnsResponse = receiveBuffer.copyOf(receivePacket.length)
+                Logger.d("DNS response received for ${dnsQuery.hostname}, size: ${dnsResponse.size}")
+
+                PacketWriter.buildIpUdpPacket(
+                    sourceIp = ipPacket.destIp,
+                    destIp = ipPacket.sourceIp,
+                    sourcePort = udpPacket.destPort,
+                    destPort = udpPacket.sourcePort,
+                    dnsPayload = dnsResponse
+                )
+            }
         } catch (e: Exception) {
             Logger.e("Error forwarding DNS request for ${dnsQuery.hostname}", e)
             null
-        } finally {
-            socket?.close()
+        }
+    }
+
+    fun cleanup() {
+        try {
+            if (::dnsSocket.isInitialized) {
+                dnsSocket.close()
+            }
+        } catch (e: Exception) {
+            Logger.e("Error closing DNS socket", e)
         }
     }
 }

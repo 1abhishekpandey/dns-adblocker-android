@@ -14,7 +14,7 @@ object Logger {
         NONE(5)
     }
 
-    var currentLevel: LogLevel = LogLevel.VERBOSE
+    var currentLevel: LogLevel = LogLevel.NONE
 
     fun v(message: String, tag: String = TAG) {
         if (currentLevel.priority <= LogLevel.VERBOSE.priority) {
