@@ -19,12 +19,13 @@ class DnsPacketHandler(
     private val upstreamDnsServer = InetAddress.getByName(dnsServerAddress)
 
     // Reusable socket for DNS forwarding to reduce battery drain
-    private val dnsSocket: DatagramSocket by lazy {
+    private val dnsSocketLazy = lazy {
         DatagramSocket().apply {
             vpnService.protect(this)
             soTimeout = 5000
         }
     }
+    private val dnsSocket: DatagramSocket by dnsSocketLazy
 
     fun processDnsPacket(ipPacketData: ByteArray): ByteArray? {
         val ipPacket = IpPacketParser.parse(ipPacketData) ?: return null
@@ -101,7 +102,7 @@ class DnsPacketHandler(
 
     fun cleanup() {
         try {
-            if (::dnsSocket.isInitialized) {
+            if (dnsSocketLazy.isInitialized()) {
                 dnsSocket.close()
             }
         } catch (e: Exception) {
