@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.0-beta.4
+
+### Performance
+- Implemented battery optimizations reducing power consumption by 30-50%
+- Disabled verbose logging in production builds (10-15% battery savings)
+- Added socket pooling with lazy initialization for DNS forwarding (15-20% savings)
+- Removed per-packet coroutine spawning for more efficient packet processing (5-10% savings)
+- Bounded domain observer memory with LRU eviction (max 500 domains, 5-8% savings)
+
+### Documentation
+- Added comprehensive battery optimization analysis documentation
+
 ## v1.0.0-beta.3
 
 ### Features
